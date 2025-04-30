@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": "MY_SECRET_API_KEY"
+        "x-api-key": "{DEDC9729/12BZPM@}"
       },
       body: JSON.stringify({ url: msg.url, status: msg.status })
     });
