@@ -6,7 +6,7 @@
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": "MY_SECRET_API_KEY"
+      "x-api-key": "MY_SECRET_API_KEY"{DEDC9729/12bzpm@}"
     },
     body: JSON.stringify({ url, text })
   });
