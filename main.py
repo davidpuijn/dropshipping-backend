@@ -53,3 +53,4 @@ async def score_by_web_reputation(domain: str) -> int:
         return -1
     else:
         return 0
+        
