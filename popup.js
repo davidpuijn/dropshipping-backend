@@ -21,7 +21,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'MY_SECRET_API_KEY'
+        'x-api-key': "{DEDC9729/12BZPM@}"
       },
       body: JSON.stringify({ url, status: 'dropshipping' })
     });
@@ -33,7 +33,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'MY_SECRET_API_KEY'
+        'x-api-key': "{DEDC9729/12BZPM@}"
       },
       body: JSON.stringify({ url, status: 'safe' })
     });
