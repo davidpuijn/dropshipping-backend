@@ -17,8 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-openai.api_key = "YOUR_OPENAI_API_KEY"
-API_KEY = "MY_SECRET_API_KEY"
+openai.api_key = "{DEDC9729/12BZPM@}"
+API_KEY = "{DEDC9729/12BZPM@}"
 STORAGE_FILE = "reported_sites.json"
 
 # Laad bestaande data
