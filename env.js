@@ -1,0 +1,3 @@
+const CONFIG = {
+  API_KEY: "MY_SECRET_API_KEY"
+};
