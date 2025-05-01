@@ -1,7 +1,7 @@
 (async () => {
   const text = document.body.innerText.toLowerCase();
   const url = window.location.hostname;
-  const API_KEY = "MY_SECRET_API_KEY";
+  const API_KEY = "{DEDC9729/12BZPM@}";
   const response = await fetch("https://dropshipping-backend.onrender.com/analyze", {
     method: "POST",
     headers: {
