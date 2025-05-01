@@ -2,4 +2,5 @@ fastapi
 uvicorn
 httpx
 openai
+python-dotenv
 beautifulsoup4
