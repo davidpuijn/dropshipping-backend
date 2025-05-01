@@ -1,3 +1,3 @@
 const CONFIG = {
-  API_KEY: "MY_SECRET_API_KEY"
+  API_KEY: "DEDC9729/12BZPM@}"
 };
