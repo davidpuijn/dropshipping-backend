@@ -1,112 +1,95 @@
-import os
-import uuid
-import httpx
-import openai
-from datetime import datetime
-from fastapi import FastAPI, Header, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, Header
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import os, re, httpx
+from datetime import datetime
 
 load_dotenv()
-
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
-API_KEY = os.getenv("LOCAL_API_KEY", "MY_SECRET_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+LOCAL_API_KEY = os.getenv("LOCAL_API_KEY")
 
-headers = {
-    "apikey": SUPABASE_API_KEY,
-    "Authorization": f"Bearer {SUPABASE_API_KEY}",
-    "Content-Type": "application/json"
-}
+learned_keywords = {"shipping", "aliexpress", "china", "2-4 weeks", "warehouse", "supplier", "reseller", "delivered from abroad"}
 
-learned_keywords = set(["aliexpress", "2-4 weeks", "shipping from china", "warehouse delay"])
-
-class SiteCheckRequest(BaseModel):
+class SiteData(BaseModel):
     url: str
     text: str
 
-class ReportRequest(BaseModel):
-    url: str
-    status: str
-    text: str = ""
-
-def authorize(x_api_key: str):
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-@app.post("/report")
-async def report_site(data: ReportRequest, x_api_key: str = Header(None)):
-    authorize(x_api_key)
-
-    if data.status == "dropshipping" and data.text:
-        for word in data.text.lower().split():
-            if any(k in word for k in ["ali", "china", "shipping", "delivery", "weeks"]):
-                learned_keywords.add(word.strip(",.!?"))
-
-    payload = {
-        "id": str(uuid.uuid4()),
-        "url": data.url,
-        "status": data.status,
-        "reported_at": datetime.utcnow().isoformat()
-    }
-
+async def report_site(url: str, status: str):
     async with httpx.AsyncClient() as client:
-        await client.post(f"{SUPABASE_URL}/rest/v1/reports", headers=headers, json=payload)
-
-    return {"message": "Reported to Supabase and learned keywords", "data": payload, "keywords": list(learned_keywords)}
-
-@app.get("/reports")
-async def get_reports():
-    async with httpx.AsyncClient() as client:
-        r = await client.get(f"{SUPABASE_URL}/rest/v1/reports?select=url,status,reported_at", headers=headers)
-        return r.json()
+        await client.post(
+            f"{SUPABASE_URL}/rest/v1/reports",
+            headers={
+                "apikey": SUPABASE_API_KEY,
+                "Authorization": f"Bearer {SUPABASE_API_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            json={"url": url, "status": status, "reported_at": datetime.utcnow().isoformat()}
+        )
 
 @app.post("/analyze")
-async def analyze_site(data: SiteCheckRequest, x_api_key: str = Header(None)):
-    authorize(x_api_key)
+async def analyze(data: SiteData, x_api_key: str = Header(None)):
+    if x_api_key != LOCAL_API_KEY:
+        return {"error": "Unauthorized"}
 
-    heuristics_score = score_by_keywords(data.text)
-    reputation_score = await score_by_web_reputation(data.url)
-    final_score = heuristics_score + reputation_score
-
-    if final_score >= 2:
-        await report_site(ReportRequest(url=data.url, status="dropshipping", text=data.text), x_api_key)
-        return {"status": "dropshipping", "score": final_score}
-    elif final_score <= -1:
-        await report_site(ReportRequest(url=data.url, status="safe", text=data.text), x_api_key)
-        return {"status": "safe", "score": final_score}
-    else:
-        return {"status": "unknown", "score": final_score}
-
-def score_by_keywords(text: str) -> int:
     score = 0
-    for word in learned_keywords:
-        if word in text.lower():
-            score += 1
-    return score
+    found = []
 
-async def score_by_web_reputation(domain: str) -> int:
-    trustpilot_url = f"https://www.trustpilot.com/review/{domain}"
+    for word in learned_keywords:
+        if word in data.text.lower():
+            score += 1
+            found.append(word)
+
+    final_score = score
+    if final_score >= 3:
+        print(f"AI detecteerde: {data.url} met status: \"dropshipping\"")
+        await report_site(data.url, "dropshipping")
+        return {"status": "dropshipping", "score": final_score}
+    elif final_score == 2:
+        print(f"AI detecteerde: {data.url} met status: \"unknown\"")
+        return {"status": "unknown", "score": final_score}
+    else:
+        print(f"AI detecteerde: {data.url} met status: \"safe\"")
+        return {"status": "safe", "score": final_score}
+
+@app.post("/report")
+async def manual_report(data: SiteData, x_api_key: str = Header(None)):
+    if x_api_key != LOCAL_API_KEY:
+        return {"error": "Unauthorized"}
+
+    # Leer nieuwe woorden
+    words = re.findall(r'\b\w+\b', data.text.lower())
+    for word in words:
+        if word not in learned_keywords and len(word) > 3:
+            print(f"Nieuw trefwoord geleerd: {word}")
+            learned_keywords.add(word)
+
+    await report_site(data.url, data.text)
+    return {"message": "Gemeld en opgeslagen."}
+
+@app.get("/reports")
+async def get_reports(x_api_key: str = Header(None)):
+    if x_api_key != LOCAL_API_KEY:
+        return {"error": "Unauthorized"}
+
     async with httpx.AsyncClient() as client:
-        try:
-            r = await client.get(trustpilot_url, timeout=10)
-            content = r.text.lower()
-            if any(bad in content for bad in ['scam', 'fake', 'bad service']):
-                return 1
-            elif any(good in content for good in ['legit', 'great service']):
-                return -1
-        except:
-            pass
-    return 0
+        res = await client.get(
+            f"{SUPABASE_URL}/rest/v1/reports?select=*",
+            headers={
+                "apikey": SUPABASE_API_KEY,
+                "Authorization": f"Bearer {SUPABASE_API_KEY}"
+            }
+        )
+        return res.json()
