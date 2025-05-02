@@ -1,25 +1,24 @@
-(async () => {
-  const text = document.body.innerText.toLowerCase();
-  const url = window.location.hostname;
-  const API_KEY = CONFIG.API_KEY;
+// content.js - detectie op webpagina's
 
-  const response = await fetch("https://dropshipping-backend.onrender.com/analyze", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY
-    },
-    body: JSON.stringify({ url, text })
-  });
+const apiUrl = "https://dropshipping-backend.onrender.com";
 
-  const result = await response.json();
+// Haal tekstinhoud van de pagina op
+const pageText = document.body.innerText || "";
 
-  if (result.status === "dropshipping") {
-    const banner = document.createElement("div");
-    banner.innerText = "⚠️ Waarschuwing: Mogelijke dropshipping-website";
-    banner.style = "background:red;color:white;padding:10px;position:fixed;top:0;width:100%;z-index:9999;";
-    document.body.prepend(banner);
+// Verstuur naar backend voor analyse
+fetch(`${apiUrl}/analyze`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ text: pageText, url: window.location.href })
+})
+.then(res => res.json())
+.then(data => {
+  if (data.is_dropshipping) {
+    chrome.runtime.sendMessage({ alert: true, result: data });
   }
-
-  chrome.runtime.sendMessage({ action: 'aiResult', url, status: result.status });
-})();
+})
+.catch(err => {
+  console.warn("❌ Fout bij backend-analyse:", err);
+});
