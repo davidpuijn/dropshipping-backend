@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Dropshipping Detector",
-  "version": "1.3",
-  "description": "Detecteert mogelijke dropshipping-websites met AI en meldfunctie.",
+  "version": "1.4",
+  "description": "Detecteert mogelijke dropshipping-websites met AI.",
   "permissions": ["storage", "tabs", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },

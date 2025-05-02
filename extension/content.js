@@ -1,24 +1,17 @@
-// content.js - detectie op webpagina's
-
+// content.js
 const apiUrl = "https://dropshipping-backend.onrender.com";
 
-// Haal tekstinhoud van de pagina op
-const pageText = document.body.innerText || "";
+const pageText = document.body.innerText.toLowerCase();
+const url = window.location.href;
 
-// Verstuur naar backend voor analyse
-fetch(`${apiUrl}/analyze`, {
+fetch(apiUrl + "/analyze", {
   method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ text: pageText, url: window.location.href })
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ text: pageText, url })
 })
 .then(res => res.json())
 .then(data => {
-  if (data.is_dropshipping) {
+  if (data.result === "dropshipping") {
     chrome.runtime.sendMessage({ alert: true, result: data });
   }
-})
-.catch(err => {
-  console.warn("❌ Fout bij backend-analyse:", err);
 });
