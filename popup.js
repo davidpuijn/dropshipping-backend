@@ -5,11 +5,12 @@ document.getElementById("reportButton").addEventListener("click", () => {
       return;
     }
 
-    fetch("https://dropshipping-backend.onrender.com/report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: data.url, text: data.text, reason: "Handmatige melding" })
-    })
+ fetch("https://dropshipping-backend.onrender.com/report", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url: websiteUrl, text: pageText, reason: "Handmatige melding" })
+})
+
     .then(res => {
       if (res.ok) alert("✅ Succesvol gemeld!");
       else alert("⚠️ Melding mislukt.");
