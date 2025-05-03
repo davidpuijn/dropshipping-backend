@@ -35,7 +35,7 @@ class AnalyzeRequest(BaseModel):
 class ReportRequest(BaseModel):
     url: str
     text: str
-    reason: str
+    reason: str = "Manueel gemeld via extensie"
 
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
