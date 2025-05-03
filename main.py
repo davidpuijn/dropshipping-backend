@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -8,7 +8,6 @@ import openai
 
 # Laad API keys en Supabase config
 load_dotenv()
-API_KEY = os.getenv("LOCAL_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -19,15 +18,16 @@ openai.api_key = OPENAI_API_KEY
 
 app = FastAPI()
 
-# CORS instellingen
+# CORS toestaan
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Toestaan vanuit alle domeinen (voor extensie)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Request modellen
 class AnalyzeRequest(BaseModel):
     url: str
     text: str
@@ -35,30 +35,28 @@ class AnalyzeRequest(BaseModel):
 class ReportRequest(BaseModel):
     url: str
     text: str
-    reason: str = "Manueel gemeld via extensie"
+    reason: str = "Handmatig gemeld"
 
+# AI-analyse route
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
-    """Voer eenvoudige AI-analyse uit"""
     keywords_data = supabase.table("keywords").select("term").execute()
     keywords = [item["term"] for item in keywords_data.data] if keywords_data.data else []
-
     score = sum(1 for word in keywords if word in request.text.lower())
     status = "dropshipping" if score >= 2 else "safe"
-    
     return {"status": status, "score": score}
 
+# Melding opslaan
 @app.post("/report")
 async def report(request: ReportRequest):
-    """Sla handmatige meldingen op in Supabase"""
     data = {
         "url": request.url,
         "text": request.text,
         "reason": request.reason,
         "ai_trained": False,
         "editable": True,
-        "log": f"Aangemeld door extensie-gebruiker"
+        "log": "Aangemeld via extensie"
     }
     supabase.table("reports").insert(data).execute()
-    return {"message": "Website is gemeld voor onderzoek"}
+    return {"message": "Melding ontvangen en opgeslagen"}
 
