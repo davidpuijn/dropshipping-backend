@@ -11,14 +11,11 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           fetch("https://dropshipping-backend.onrender.com/report", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              url: response.url,
-              text: response.text,
-              reason: "Handmatig gemeld via extensie"
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url: websiteUrl, text: pageText, reason: "Handmatige melding" })
+})
+
             })
           })
           .then(res => {
