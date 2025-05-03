@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -8,6 +8,7 @@ import openai
 
 # Laad API keys en Supabase config
 load_dotenv()
+API_KEY = os.getenv("LOCAL_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -18,16 +19,15 @@ openai.api_key = OPENAI_API_KEY
 
 app = FastAPI()
 
-# CORS toestaan
+# CORS instellingen
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Toestaan vanuit alle domeinen (voor extensie)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Request modellen
 class AnalyzeRequest(BaseModel):
     url: str
     text: str
@@ -35,37 +35,41 @@ class AnalyzeRequest(BaseModel):
 class ReportRequest(BaseModel):
     url: str
     text: str
-    reason: str = "Handmatig gemeld"
+    reason: str
 
-# AI-analyse route
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
-    keywords_data = supabase.table("keywords").select("term").execute()
-    keywords = [item["term"] for item in keywords_data.data] if keywords_data.data else []
+    """Voer eenvoudige AI-analyse uit"""
+    keywords_data = supabase.table("keywords").select("keywords").execute()
+    keywords = [item["keywords"] for item in keywords_data.data] if keywords_data.data else []
+
     score = sum(1 for word in keywords if word in request.text.lower())
     status = "dropshipping" if score >= 2 else "safe"
+    
     return {"status": status, "score": score}
 
-# Melding opslaan
 @app.post("/report")
 async def report(request: ReportRequest):
+    """Sla handmatige meldingen op in Supabase"""
     data = {
         "url": request.url,
         "text": request.text,
-        "reason": request.reason,
-        "ai_trained": False,
-        "editable": True,
-        "log": "Aangemeld via extensie"
+        "status": request.reason,
+        "ai_created": False,
     }
     supabase.table("reports").insert(data).execute()
-    return {"message": "Melding ontvangen en opgeslagen"}
+    return {"message": "Website is gemeld voor onderzoek"}
 
 @app.post("/debug")
 async def debug_report(request: Request):
-    try:
-        data = await request.json()
-        return {"received": data}
-    except Exception as e:
-        return {"error": str(e)}
+    """Debug endpoint voor handmatige testmeldingen"""
+    body = await request.json()
+    supabase.table("reports").insert({
+        "url": body["url"],
+        "text": body["text"],
+        "status": body.get("reason", "debug"),
+        "ai_created": False
+    }).execute()
+    return {"message": "Debugmelding opgeslagen"}
 
 
