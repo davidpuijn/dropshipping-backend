@@ -60,3 +60,12 @@ async def report(request: ReportRequest):
     supabase.table("reports").insert(data).execute()
     return {"message": "Melding ontvangen en opgeslagen"}
 
+@app.post("/debug")
+async def debug_report(request: Request):
+    try:
+        data = await request.json()
+        return {"received": data}
+    except Exception as e:
+        return {"error": str(e)}
+
+
