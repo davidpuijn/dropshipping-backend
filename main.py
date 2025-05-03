@@ -1,11 +1,3 @@
-from fastapi import FastAPI
-from routes import analyze, report
+from supabase_client import create_client
 
-app = FastAPI()
-
-app.include_router(analyze.router)
-app.include_router(report.router)
-
-@app.get("/")
-def read_root():
-    return {"message": "Dropshipping backend live!"}
+# start je FastAPI app hier
