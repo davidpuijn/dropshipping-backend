@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -28,25 +28,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class AnalyzeRequest(BaseModel):
-    url: str
-    text: str
-
 class ReportRequest(BaseModel):
     url: str
     text: str
     reason: str
 
-@app.post("/analyze")
-async def analyze(request: AnalyzeRequest):
-    """Voer eenvoudige AI-analyse uit"""
-    keywords_data = supabase.table("keywords").select("keywords").execute()
-    keywords = [item["keywords"] for item in keywords_data.data] if keywords_data.data else []
-
-    score = sum(1 for word in keywords if word in request.text.lower())
-    status = "dropshipping" if score >= 2 else "safe"
-    
-    return {"status": status, "score": score}
 @app.post("/report")
 async def report(request: Request):
     data = await request.json()
@@ -59,6 +45,7 @@ async def report(request: Request):
     except Exception as e:
         print("Fout bij insert:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
