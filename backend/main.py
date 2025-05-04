@@ -47,18 +47,20 @@ async def analyze(request: AnalyzeRequest):
     status = "dropshipping" if score >= 2 else "safe"
     
     return {"status": status, "score": score}
-
 @app.post("/report")
-async def report(request: ReportRequest):
-    """Sla handmatige meldingen op in Supabase"""
-    data = {
-        "url": request.url,
-        "text": request.text,
-        "status": request.reason,
-        "ai_created": False,
-    }
-    supabase.table("reports").insert(data).execute()
-    return {"message": "Website is gemeld voor onderzoek"}
+async def report(request: Request):
+    data = await request.json()
+    print("Ontvangen data:", data)
+
+    try:
+        response = supabase.table("reports").insert(data).execute()
+        print("Supabase response:", response)
+        return {"message": "Report stored"}
+    except Exception as e:
+        print("Fout bij insert:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 @app.post("/debug")
 async def debug_report(request: Request):
@@ -71,5 +73,4 @@ async def debug_report(request: Request):
         "ai_created": False
     }).execute()
     return {"message": "Debugmelding opgeslagen"}
-
 
