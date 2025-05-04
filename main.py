@@ -33,6 +33,23 @@ class ReportRequest(BaseModel):
     text: str
     reason: str
 
+class AnalyzeRequest(BaseModel):
+    url: str
+    text: str
+    reason: str
+
+@app.post("/analyze")
+async def analyze(request: AnalyzeRequest):
+    """Eenvoudige AI-analyse gebaseerd op keywords in Supabase"""
+    keywords_data = supabase.table("keywords").select("keywords").execute()
+    keywords = [item["keywords"] for item in keywords_data.data] if keywords_data.data else []
+
+    score = sum(1 for word in keywords if word.lower() in request.text.lower())
+    status = "dropshipping" if score >= 2 else "safe"
+
+    return {"status": status, "score": score}
+
+
 @app.post("/report")
 async def report(request: Request):
     data = await request.json()
