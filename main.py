@@ -41,8 +41,8 @@ class ReportRequest(BaseModel):
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
     """Voer eenvoudige AI-analyse uit"""
-    keywords_data = supabase.table("keywords").select("term").execute()
-    keywords = [item["term"] for item in keywords_data.data] if keywords_data.data else []
+    keywords_data = supabase.table("keywords").select("keywords").execute()
+    keywords = [item["keywords"] for item in keywords_data.data] if keywords_data.data else []
 
     score = sum(1 for word in keywords if word in request.text.lower())
     status = "dropshipping" if score >= 2 else "safe"
