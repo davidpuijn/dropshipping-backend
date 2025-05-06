@@ -2,38 +2,32 @@
   "manifest_version": 3,
   "name": "Dropshipping Detector",
   "version": "1.0",
-  "description": "Detecteert automatisch of een webshop mogelijk dropshipping is.",
+  "description": "Detecteert dropshipping-webshops",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
     }
   },
   "background": {
     "service_worker": "background.js"
   },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
-  ],
-  "permissions": [
-    "activeTab",
-    "scripting",
-    "storage",
-    "https://dropshipping-backend.onrender.com/"
-  ],
-  "host_permissions": [
-    "http://*/*",
-    "https://*/*"
-  ],
-  "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
-  }
+  ]
 }
